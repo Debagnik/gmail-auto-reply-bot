@@ -1,5 +1,5 @@
 .env
-credentials.json
+*.json
 replied_senders.csv
 /logs
-token.json
+venv
