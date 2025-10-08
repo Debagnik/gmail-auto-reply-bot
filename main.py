@@ -39,7 +39,7 @@ logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format='%(asctime)s [
 OLLAMA_API_BASE = os.getenv("OPENAI_API_BASE", "http://localhost:11434/v1")
 OLLAMA_MODEL = os.getenv("MODEL_NAME", "gemma3:4b")
 OLLAMA_KEY = os.getenv("OPENAI_API_KEY", "ollama")
-REPLY_ONCE = os.getenv("REPLY_ONCE_PER_SENDER", "True").lower() == "true"
+REPLY_ONCE = os.getenv("REPLY_ONCE", "True").lower() == "true"
 
 client = OpenAI(base_url=OLLAMA_API_BASE, api_key=OLLAMA_KEY)
 
@@ -154,6 +154,11 @@ def send_reply(service, to_email, subject, message_body, character):
 # MAIN LOOP
 # ======================================================
 def main():
+    """
+    Start and run the Gmail Auto Reply Bot: authenticate, poll for unread messages, generate persona-based replies, send emails, and record replied senders.
+    
+    This function authenticates to Gmail, loads character profiles and a fallback reply, then enters a loop that polls for unread messages until a shutdown is requested. For each new message it selects a character persona, constructs an AI prompt, attempts to generate a persona-styled reply (falling back to the configured fallback message on failure), sends the reply via Gmail, and persists a record of the sender with the character used and whether the fallback was used. It performs responsive sleeping between polls, handles graceful shutdown, logs runtime events, and continues operation after non-critical errors.
+    """
     logging.info("Starting Gmail Auto Reply Bot (Windows)")
     print(f"Gmail Auto Reply Bot started. Press Ctrl+C to stop. (Reply once per sender: {REPLY_ONCE})")
     service, my_email = gmail_authenticate()
@@ -178,12 +183,16 @@ def main():
                 character = choice(characters)
 
                 # Use reply.json content as prompt only
-                prompt = f"You are {character.get('name')}, a {character.get('style')} persona. " \
-                         f"Facts: {character.get('randomFacts', [])}. " \
-                         f"Quirks: {character.get('quirks', [])}. " \
-                         f"Write a short, warm reply using this template: \"{fallback_message}\". " \
-                         f"Do NOT reference the email itself."
-
+                prompt = (
+                            f"You are {character.get('name')}, a {character.get('style')} persona. "
+                            f"Facts about you: {character.get('randomFacts', [])}. "
+                            f"Personality quirks: {character.get('quirks', [])}. "
+                            f"Your task: rewrite and deliver the following message so that it keeps ALL its information, facts, and meaning intact, "
+                            f"but sounds exactly like something {character.get('name')} would say — their tone, habits, mannerisms, and emotional nuance. "
+                            f"Do not shorten or omit any factual part of the message. "
+                            f"Keep it readable as an in-character email reply, not a script or stage direction. "
+                            f"Here is the message you must fully express in character:\n\"{fallback_message}\""
+                )
                 ai_reply = generate_ai_reply(prompt)
                 used_fallback = False
                 if not ai_reply:
@@ -192,9 +201,9 @@ def main():
 
                 send_reply(service, sender, "Automated Reply", ai_reply, character)
 
-                if REPLY_ONCE:
-                    replied_senders.add(sender)
-                    save_replied_sender(sender, character.get('name'), used_fallback)
+                
+                replied_senders.add(sender)
+                save_replied_sender(sender, character.get('name'), used_fallback)
 
                 logging.info(f"Replied to {sender} with persona {character.get('name')}, fallback: {used_fallback}")
                 print(f"✔ Replied to {sender} ({character.get('name')}){' [fallback]' if used_fallback else ''}")
