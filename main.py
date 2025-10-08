@@ -181,7 +181,8 @@ def main():
                 prompt = f"You are {character.get('name')}, a {character.get('style')} persona. " \
                          f"Facts: {character.get('randomFacts', [])}. " \
                          f"Quirks: {character.get('quirks', [])}. " \
-                         f"Write a short, warm reply using this template: \"{fallback_message}\". " \
+                         f"Write a short reply as per the instruction like the: \"{fallback_message}\". in character" \
+                         f"convey all the information from the template. in character" \
                          f"Do NOT reference the email itself."
 
                 ai_reply = generate_ai_reply(prompt)

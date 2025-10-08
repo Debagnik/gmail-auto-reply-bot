@@ -1,5 +1,5 @@
 .env
 *.json
-replied_senders.csv
+*.csv
 /logs
 venv
