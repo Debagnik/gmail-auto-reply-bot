@@ -154,6 +154,11 @@ def send_reply(service, to_email, subject, message_body, character):
 # MAIN LOOP
 # ======================================================
 def main():
+    """
+    Start and run the Gmail Auto Reply Bot: authenticate, poll for unread messages, generate persona-based replies, send emails, and record replied senders.
+    
+    This function authenticates to Gmail, loads character profiles and a fallback reply, then enters a loop that polls for unread messages until a shutdown is requested. For each new message it selects a character persona, constructs an AI prompt, attempts to generate a persona-styled reply (falling back to the configured fallback message on failure), sends the reply via Gmail, and persists a record of the sender with the character used and whether the fallback was used. It performs responsive sleeping between polls, handles graceful shutdown, logs runtime events, and continues operation after non-critical errors.
+    """
     logging.info("Starting Gmail Auto Reply Bot (Windows)")
     print(f"Gmail Auto Reply Bot started. Press Ctrl+C to stop. (Reply once per sender: {REPLY_ONCE})")
     service, my_email = gmail_authenticate()
